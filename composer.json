@@ -1,0 +1,26 @@
+{
+    "name": "fontom/fontom",
+    "description": "A PHP library for handling font files (initially TTF format).",
+    "type": "library",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Bubenok Dmitry",
+            "email": "dima@bubenok.com"
+        }
+    ],
+    "autoload": {
+        "psr-4": {
+            "Fontom\\": "src/"
+        }
+    },
+    "require": {
+        "php": ">=7.4"
+    },
+    "require-dev": {
+        "phpunit/phpunit": "^9.5"
+    },
+    "scripts": {
+        "test": "phpunit tests"
+    }
+}
