@@ -1,0 +1,14 @@
+/vendor/
+/.idea/
+/.vscode/
+composer.lock
+.DS_Store
+*.log
+*.tmp
+phpunit.xml
+test-results/
+/build/
+/node_modules/
+.env
+.env.*
+.osp/
