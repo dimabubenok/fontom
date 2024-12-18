@@ -16,9 +16,21 @@
 
         <?php
         require_once 'vendor/autoload.php';
+
         use Fontom\Fontom;
 
-        $fontom = new Fontom('');
+        // Example usage
+        try {
+            //$font = Fontom::load(__DIR__ . "/assets/fonts/Golos Text_Regular.ttf");
+            //$font = Fontom::load(__DIR__ . "/assets/fonts/CoTextCorp.ttf");
+            $font = Fontom::load(__DIR__ . "/assets/fonts/Calypso.ttf");
+            //$font = Fontom::load(__DIR__ . "/assets/fonts/arial.ttf");
+            //echo "Font Name: " . $font->getFontName() . "\n";
+            echo "Font Author: " . $font->getFontAuthor() . "\n";
+            // echo "Available Tables: " . implode(", ", $font->getTables()) . "\n";
+        } catch (\Exception $e) {
+            echo "Error: " . $e->getMessage() . "\n";
+        }
         ?>
     </div>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.min.js"></script>
