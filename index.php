@@ -12,12 +12,15 @@
     <div class="container">
         <h1>Fontom</h1>
         <h3>PHP library for handling font files</h3>
+        <br>
+
+        <?php
+        require_once 'vendor/autoload.php';
+        use Fontom\Fontom;
+
+        $fontom = new Fontom('');
+        ?>
     </div>
-
-    <?php
-        
-    ?>
-
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.min.js"></script>
 </body>
 
