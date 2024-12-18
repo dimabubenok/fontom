@@ -74,8 +74,14 @@ class Fontom implements FontInterface
      */
     public function getFontAuthor(): string
     {
-        // Implementation placeholder: actual parsing logic needed.
-        return $this->readNameRecord(3);
+        $author = $this->readNameRecord(17);
+        if ($author === "Unknown Record #9") {
+            $manufacturer = $this->readNameRecord(8);
+            if ($manufacturer !== "Unknown Record #8") {
+                return $manufacturer;
+            }
+        }
+        return $author;
     }
 
     /**
@@ -88,11 +94,6 @@ class Fontom implements FontInterface
         return ["cmap", "glyf", "head", "hhea", "hmtx", "maxp", "name", "post"];
     }
 
-    /**
-     * Reads a specific name record by ID (placeholder for actual parsing logic).
-     * @param int $nameId The ID of the name record (1 = Font Name, 2 = Font Author).
-     * @return string
-     */
     /**
      * Reads a specific name record by ID, considering different platform IDs.
      * @param int $nameId The ID of the name record (e.g., 1 = Font Name, 9 = Font Author).
@@ -114,7 +115,6 @@ class Fontom implements FontInterface
         }
         return "Unknown Record #$nameId";
     }
-
 
     /**
      * Reads the name table from the TTF font file.
@@ -176,32 +176,17 @@ class Fontom implements FontInterface
 
             $string = substr($nameTable, $stringOffset + $stringOffsetEntry, $length);
 
-            // Конвертация строки из UTF-16BE в UTF-8
-            if ($platformId == 0 || ($platformId == 3 && $encodingId == 1)) {
-                $string = mb_convert_encoding($string, 'UTF-8', 'UTF-16BE');
-            }
-
             $records[] = [
                 'platformId' => $platformId,
                 'encodingId' => $encodingId,
                 'languageId' => $languageId,
-                'nameId' => $nameId,
-                'string' => $string
+                'nameId'     => $nameId,
+                'string'     => $string
             ];
 
             $recordOffset += 12;
         }
 
         return $records;
-    }
-
-    /**
-     * Closes the font file when the object is destroyed.
-     */
-    public function __destruct()
-    {
-        if ($this->filePointer) {
-            fclose($this->filePointer);
-        }
     }
 }
