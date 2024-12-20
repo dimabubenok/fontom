@@ -189,4 +189,83 @@ class Fontom implements FontInterface
 
         return $records;
     }
+
+    /**
+     * Reads all name records and returns them as an array with NameID names.
+     *
+     * @return array An array of name records, each containing 'id', 'name', and 'value'.
+     * @throws \Exception If the name table is not found or the file is invalid.
+     */
+    public function getAllNameRecords(): array
+    {
+        $nameTable = $this->readNameTable();
+        $allRecords = [];
+
+        foreach ($nameTable as $record) {
+            $nameId = $record['nameId'];
+            $allRecords[] = [
+                'id'    => $nameId,
+                'name'  => $this->getNameIdDescription($nameId),
+                'value' => $this->decodeString($record),
+            ];
+        }
+
+        return $allRecords;
+    }
+
+    /**
+     * Returns a human-readable description for a given NameID.
+     *
+     * @param int $nameId The NameID.
+     * @return string Description of the NameID.
+     */
+    private function getNameIdDescription(int $nameId): string
+    {
+        $nameIdMap = [
+            0  => 'Copyright Notice',
+            1  => 'Font Family Name',
+            2  => 'Font Subfamily Name',
+            3  => 'Unique Font Identifier',
+            4  => 'Full Font Name',
+            5  => 'Version String',
+            6  => 'PostScript Name',
+            7  => 'Trademark',
+            8  => 'Manufacturer',
+            9  => 'Designer',
+            10 => 'Description',
+            11 => 'URL Vendor',
+            12 => 'URL Designer',
+            13 => 'License Description',
+            14 => 'License Info URL',
+            15 => 'Reserved',
+            16 => 'Typographic Family Name',
+            17 => 'Typographic Subfamily Name',
+            18 => 'Compatible Full Name',
+            19 => 'Sample Text',
+            20 => 'PostScript CID Findfont Name',
+            21 => 'WWS Family Name',
+            22 => 'WWS Subfamily Name',
+            23 => 'Light Background Palette',
+            24 => 'Dark Background Palette',
+            25 => 'Variations PostScript Name Prefix',
+        ];
+
+        return $nameIdMap[$nameId] ?? "Unknown NameID ($nameId)";
+    }
+
+    /**
+     * Decodes a string based on platformId.
+     *
+     * @param array $record The name record.
+     * @return string Decoded string.
+     */
+    private function decodeString(array $record): string
+    {
+        if ($record['platformId'] === 3) {
+            return mb_convert_encoding($record['string'], 'UTF-8', 'UTF-16BE');
+        } elseif ($record['platformId'] === 1) {
+            return $record['string'];
+        }
+        return $record['string'];
+    }
 }
