@@ -4,28 +4,20 @@ namespace Fontom\Interfaces;
 
 /**
  * Interface FontInterface
- * Defines the basic methods for font handling.
+ * Defines the contract for font classes.
  */
 interface FontInterface
 {
     /**
-     * Get the name of the font.
+     * Gets the name of the font.
      *
-     * @return string
+     * @return string The name of the font.
      */
     public function getFontName(): string;
-
     /**
-     * Get the author of the font.
+     * Gets the author or designer of the font.
      *
-     * @return string
+     * @return string The author or designer of the font.
      */
     public function getFontAuthor(): string;
-
-    /**
-     * Get a list of tables in the font file.
-     *
-     * @return array
-     */
-    public function getTables(): array;
 }
