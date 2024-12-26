@@ -19,17 +19,35 @@
 
         use Fontom\Fontom;
 
-        // Example usage
         try {
-            //$font = Fontom::load(__DIR__ . "/assets/fonts/Golos Text_Regular.ttf");
-            //$font = Fontom::load(__DIR__ . "/assets/fonts/CoTextCorp.ttf");
-            $font = Fontom::load(__DIR__ . "/assets/fonts/Calypso.ttf");
-            //$font = Fontom::load(__DIR__ . "/assets/fonts/arial.ttf");
-            //echo "Font Name: " . $font->getFontName() . "\n";
-            echo "Font Author: " . $font->getFontAuthor() . "\n";
-            // echo "Available Tables: " . implode(", ", $font->getTables()) . "\n";
-        } catch (\Exception $e) {
-            echo "Error: " . $e->getMessage() . "\n";
+            // Укажите путь к шрифту
+            $fontPath = __DIR__ . "/assets/fonts/Golos Text_Regular.ttf";
+            $fontPath = __DIR__ . "/assets/fonts/CoTextCorp.ttf";
+            //$fontPath = __DIR__ . "/assets/fonts/Calypso.ttf";
+            //$fontPath = __DIR__ . "/assets/fonts/arial.ttf";
+
+
+            // Создайте экземпляр Fontom
+            $fontom = new Fontom($fontPath);
+
+            // Получите название шрифта
+            echo "<strong>Font Name:</strong> " . $fontom->getFontName() . PHP_EOL . "<br>";
+
+            // Получите автора или дизайнера шрифта
+            echo "<strong>Font Author:</strong> " . $fontom->getFontAuthor() . PHP_EOL . "<br>";
+
+            // Количество глифов шрифта
+            echo "<strong>Font glyphs num:</strong> " . $fontom->getNumberOfGlyphs() . PHP_EOL . "<br>";
+
+            // Все записи таблицы name
+            $nameTableRows = '';
+            foreach($fontom->getAllNameRecords() as $nameRecord){
+                $nameTableRows .= "<tr><td>{$nameRecord['nameId']}</td><td>{$nameRecord['nameDescription']}</td><td>{$nameRecord['value']}</td></tr>";
+            }
+            echo "<table>{$nameTableRows}</table>";
+        } catch (Exception $e) {
+            // Обработайте исключения
+            echo "Error: " . $e->getMessage() . PHP_EOL;
         }
         ?>
     </div>
