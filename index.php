@@ -22,7 +22,7 @@
         try {
             // Укажите путь к шрифту
             $fontPath = __DIR__ . "/assets/fonts/Golos Text_Regular.ttf";
-            $fontPath = __DIR__ . "/assets/fonts/CoTextCorp.ttf";
+            //$fontPath = __DIR__ . "/assets/fonts/CoTextCorp.ttf";
             //$fontPath = __DIR__ . "/assets/fonts/Calypso.ttf";
             //$fontPath = __DIR__ . "/assets/fonts/arial.ttf";
 
@@ -37,11 +37,26 @@
             echo "<strong>Font Author:</strong> " . $fontom->getFontAuthor() . PHP_EOL . "<br>";
 
             // Количество глифов шрифта
-            echo "<strong>Font glyphs num:</strong> " . $fontom->getNumberOfGlyphs() . PHP_EOL . "<br>";
+            //echo "<strong>Font glyphs num:</strong> " . $fontom->getNumberOfGlyphs() . PHP_EOL . "<br>";
+            //$image = $fontom->renderTextImage('Тайна Рудольфа!',50);
+            $image = $fontom->renderGlyphsImage(100);
+
+            // Буферизация вывода изображения
+            ob_start();
+            imagepng($image);
+            $imageData = ob_get_clean();
+
+            // Кодируем изображение в Base64
+            $base64Image = base64_encode($imageData);
+
+            // Освобождаем ресурсы
+            imagedestroy($image);
+
+            echo "<img src='data:image/png;base64,$base64Image' alt='Rendered Text'>";
 
             // Все записи таблицы name
             $nameTableRows = '';
-            foreach($fontom->getAllNameRecords() as $nameRecord){
+            foreach ($fontom->getAllNameRecords() as $nameRecord) {
                 $nameTableRows .= "<tr><td>{$nameRecord['nameId']}</td><td>{$nameRecord['nameDescription']}</td><td>{$nameRecord['value']}</td></tr>";
             }
             echo "<table>{$nameTableRows}</table>";

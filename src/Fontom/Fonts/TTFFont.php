@@ -3,6 +3,8 @@
 namespace Fontom\Fonts;
 
 use Fontom\Abstracts\Font;
+use Fontom\Rendering\TextRenderer;
+
 
 /**
  * Class TTFFont
@@ -19,6 +21,16 @@ class TTFFont extends Font
     public static function supports(string $filePath): bool
     {
         return strtolower(pathinfo($filePath, PATHINFO_EXTENSION)) === 'ttf';
+    }
+
+    /**
+     * Gets the file path of the TTF font.
+     *
+     * @return string The file path of the font.
+     */
+    public function getFilePath(): string
+    {
+        return $this->filePath;
     }
 
     /**
@@ -237,5 +249,161 @@ class TTFFont extends Font
     public function getNumberOfGlyphs(): int
     {
         return $this->readMaxpTable();
+    }
+
+    /**
+     * Creates an image with rendered text using the TextRenderer.
+     *
+     * @param string $text The text to render.
+     * @param int $fontSize The size of the font.
+     * @param int $imageWidth The width of the image.
+     * @param int $imageHeight The height of the image.
+     * @param array $textColor RGB array of text color (e.g., [0, 0, 0] for black).
+     * @param array $backgroundColor RGB array of background color (e.g., [255, 255, 255] for white).
+     * @return \GdImage The generated image.
+     * @throws \Exception If rendering fails.
+     */
+    public function renderTextImage(
+        string $text,
+        int $fontSize = 10,
+        int $imageWidth = 1400,
+        int $imageHeight = 500,
+        array $textColor = [0, 0, 0],
+        array $backgroundColor = [255, 255, 255]
+    ): \GdImage {
+        $renderer = new TextRenderer($this);
+        return $renderer->renderText(
+            $text,
+            $fontSize,
+            $imageWidth,
+            $imageHeight,
+            $textColor,
+            $backgroundColor
+        );
+    }
+
+    /**
+     * Renders an image containing all glyphs in the loaded font.
+     *
+     * @param int $glyphSize The size of each glyph in the image.
+     * @param int $columns The number of glyphs per row.
+     * @param array $textColor RGB array of text color (e.g., [0, 0, 0] for black).
+     * @param array $backgroundColor RGB array of background color (e.g., [255, 255, 255] for white).
+     * @return GdImage The generated image.
+     * @throws \Exception If rendering fails.
+     */
+    public function renderGlyphsImage(
+        int $glyphSize = 50,
+        int $columns = 10,
+        array $textColor = [0, 0, 0],
+        array $backgroundColor = [255, 255, 255]
+    ): \GdImage {
+        $renderer = new TextRenderer($this);
+        return $renderer->renderGlyphs(
+            $glyphSize,
+            $columns,
+            $textColor,
+            $backgroundColor
+        );
+    }
+
+    public function getCmapTable(): array
+    {
+        $handle = fopen($this->filePath, 'rb');
+        if (!$handle) {
+            throw new \Exception("Unable to open font file: {$this->filePath}");
+        }
+
+        $data = fread($handle, filesize($this->filePath));
+        fclose($handle);
+
+        $numTables = unpack('n', substr($data, 4, 2))[1];
+        $offsetTable = 12;
+
+        $cmapOffset = null;
+
+        // Найти таблицу cmap
+        for ($i = 0; $i < $numTables; $i++) {
+            $entry = substr($data, $offsetTable + ($i * 16), 16);
+            $tag = substr($entry, 0, 4);
+            $offset = unpack('N', substr($entry, 8, 4))[1];
+
+            if ($tag === 'cmap') {
+                $cmapOffset = $offset;
+                break;
+            }
+        }
+
+        if ($cmapOffset === null) {
+            throw new \Exception("cmap table not found in font file.");
+        }
+
+        // Читаем таблицу cmap
+        $cmapHeader = substr($data, $cmapOffset, 4);
+        $numSubtables = unpack('n', substr($cmapHeader, 2, 2))[1];
+
+        $bestSubtableOffset = null;
+
+        // Ищем лучшую подтаблицу (формат 4 или 12 для Unicode)
+        for ($i = 0; $i < $numSubtables; $i++) {
+            $subtableEntry = substr($data, $cmapOffset + 4 + ($i * 8), 8);
+            $platformId = unpack('n', substr($subtableEntry, 0, 2))[1];
+            $encodingId = unpack('n', substr($subtableEntry, 2, 2))[1];
+            $subtableOffset = unpack('N', substr($subtableEntry, 4, 4))[1];
+
+            if ($platformId === 3 && ($encodingId === 1 || $encodingId === 10)) { // Windows Unicode
+                $bestSubtableOffset = $cmapOffset + $subtableOffset;
+                break;
+            }
+        }
+
+        if ($bestSubtableOffset === null) {
+            throw new \Exception("No suitable cmap subtable found.");
+        }
+
+        // Парсим подтаблицу формата 4
+        $subtable = substr($data, $bestSubtableOffset);
+        $format = unpack('n', substr($subtable, 0, 2))[1];
+
+        if ($format !== 4) {
+            throw new \Exception("Only cmap format 4 is supported.");
+        }
+
+        $segCountX2 = unpack('n', substr($subtable, 6, 2))[1];
+        $segCount = $segCountX2 / 2;
+
+        $endCodeOffset = 14;
+        $startCodeOffset = $endCodeOffset + ($segCount * 2) + 2;
+        $idDeltaOffset = $startCodeOffset + ($segCount * 2);
+        $idRangeOffsetOffset = $idDeltaOffset + ($segCount * 2);
+
+        $cmap = [];
+
+        for ($i = 0; $i < $segCount - 1; $i++) { // Последний сегмент обычно 0xFFFF
+            $endCode = unpack('n', substr($subtable, $endCodeOffset + ($i * 2), 2))[1];
+            $startCode = unpack('n', substr($subtable, $startCodeOffset + ($i * 2), 2))[1];
+            $idDelta = unpack('n', substr($subtable, $idDeltaOffset + ($i * 2), 2))[1];
+            $idRangeOffset = unpack('n', substr($subtable, $idRangeOffsetOffset + ($i * 2), 2))[1];
+
+            if ($idDelta >= 0x8000) {
+                $idDelta -= 0x10000;
+            }
+
+            for ($code = $startCode; $code <= $endCode; $code++) {
+                if ($idRangeOffset === 0) {
+                    $glyphIndex = ($code + $idDelta) & 0xFFFF;
+                } else {
+                    $rangeOffset = $idRangeOffset / 2 + ($code - $startCode);
+                    $glyphIndex = unpack('n', substr($subtable, $idRangeOffsetOffset + ($i * 2) + ($rangeOffset * 2), 2))[1];
+                    if ($glyphIndex !== 0) {
+                        $glyphIndex = ($glyphIndex + $idDelta) & 0xFFFF;
+                    }
+                }
+
+                $cmap[$code] = $glyphIndex;
+            }
+        }
+
+        return $cmap;
     }
 }
