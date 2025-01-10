@@ -10,6 +10,7 @@ use Fontom\Interfaces\FontInterface;
  */
 abstract class Font implements FontInterface
 {
+    public $cmap;
     protected string $filePath;
 
     public function __construct(string $filePath)

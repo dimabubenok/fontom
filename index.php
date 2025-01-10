@@ -22,7 +22,7 @@
         try {
             // Укажите путь к шрифту
             $fontPath = __DIR__ . "/assets/fonts/Golos Text_Regular.ttf";
-            //$fontPath = __DIR__ . "/assets/fonts/CoTextCorp.ttf";
+            $fontPath = __DIR__ . "/assets/fonts/CoTextCorp.ttf";
             //$fontPath = __DIR__ . "/assets/fonts/Calypso.ttf";
             //$fontPath = __DIR__ . "/assets/fonts/arial.ttf";
 
@@ -41,25 +41,52 @@
             //$image = $fontom->renderTextImage('Тайна Рудольфа!',50);
             $image = $fontom->renderGlyphsImage(100);
 
-            // Буферизация вывода изображения
+            $glyphImage = $fontom->renderGlyphImage(64260);
+
+            // Буферизация вывода изображения всех глифов
             ob_start();
             imagepng($image);
             $imageData = ob_get_clean();
 
-            // Кодируем изображение в Base64
+            // Буферизация вывода изображения одного глифа
+            ob_start();
+            imagepng($glyphImage);
+            $glyphImageData = ob_get_clean();
+
+
+
+            // Кодируем изображение всех глифов в Base64
             $base64Image = base64_encode($imageData);
+
+            // Кодируем изображение всех одного глифа в Base64
+            $base64GlyphImage = base64_encode($glyphImageData);
 
             // Освобождаем ресурсы
             imagedestroy($image);
+            imagedestroy($glyphImage);
 
-            echo "<img src='data:image/png;base64,$base64Image' alt='Rendered Text'>";
+
+            $allGlyphImage = "<img src='data:image/png;base64,$base64Image' alt='Rendered Text'><br>";
+            $glyphImage    = "<img src='data:image/png;base64,$base64GlyphImage' alt='Rendered Glyph'><br>";
 
             // Все записи таблицы name
             $nameTableRows = '';
             foreach ($fontom->getAllNameRecords() as $nameRecord) {
                 $nameTableRows .= "<tr><td>{$nameRecord['nameId']}</td><td>{$nameRecord['nameDescription']}</td><td>{$nameRecord['value']}</td></tr>";
             }
-            echo "<table>{$nameTableRows}</table>";
+
+            $fontInfoTable = "<table>{$nameTableRows}</table>";
+
+            //Unicodes
+            $codes = array_keys($fontom->cmap);
+            echo count($codes)."<br>\n";
+            echo $fontom->getNumberOfGlyphs()."<br>\n";
+            echo "<pre>";
+            print_r($codes);
+            echo "</pre>";
+            echo "<br>";
+
+            echo $glyphImage . $allGlyphImage . $fontInfoTable;
         } catch (Exception $e) {
             // Обработайте исключения
             echo "Error: " . $e->getMessage() . PHP_EOL;

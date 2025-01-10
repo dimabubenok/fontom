@@ -12,6 +12,9 @@ use GdImage;
  */
 class Fontom
 {
+
+    public $cmap;
+
     /**
      * The loaded font instance.
      *
@@ -28,6 +31,7 @@ class Fontom
     public function __construct(string $filePath)
     {
         $this->font = FontFactory::load($filePath);
+        $this->cmap = $this->font->getCmapTable();
     }
 
     /**
@@ -138,5 +142,10 @@ class Fontom
         }
 
         throw new \Exception("The current font type does not support rendering glyphs.");
+    }
+
+    public function renderGlyphImage($unicode)
+    {
+        return $this->font->renderGlyph($unicode);
     }
 }

@@ -60,18 +60,19 @@ class TTFFont extends Font
      */
     public function getFontAuthor(): string
     {
-        $nameTable = $this->readNameTable();
+        $allNameRecords = $this->getAllNameRecords();
         $author = "Unknown Author";
 
-        foreach ($nameTable['records'] as $record) {
+        foreach ($allNameRecords as $record) {
             if ($record['nameId'] === 9 && $record['platformId'] === 3) {
-                $author = mb_convert_encoding($record['value'], 'UTF-8', 'UTF-16BE');
+                $author = $record['value'];
                 break;
             }
         }
 
         return $author;
     }
+
 
     /**
      * Gets all name records from the 'name' table.
@@ -307,6 +308,14 @@ class TTFFont extends Font
         );
     }
 
+    public function renderGlyph($unicode)
+    {
+        $renderer = new TextRenderer($this);
+        return $renderer->renderGlyph(
+            $unicode
+        );
+    }
+
     public function getCmapTable(): array
     {
         $handle = fopen($this->filePath, 'rb');
@@ -391,13 +400,22 @@ class TTFFont extends Font
 
             for ($code = $startCode; $code <= $endCode; $code++) {
                 if ($idRangeOffset === 0) {
+                    // Простая формула для вычисления глифа
                     $glyphIndex = ($code + $idDelta) & 0xFFFF;
                 } else {
+                    // Вычисление смещения в диапазоне
                     $rangeOffset = $idRangeOffset / 2 + ($code - $startCode);
-                    $glyphIndex = unpack('n', substr($subtable, $idRangeOffsetOffset + ($i * 2) + ($rangeOffset * 2), 2))[1];
+                    $glyphData = substr($subtable, $idRangeOffsetOffset + ($i * 2) + ($rangeOffset * 2), 2);
+                    $glyphIndex = unpack('n', $glyphData)[1];
+
                     if ($glyphIndex !== 0) {
                         $glyphIndex = ($glyphIndex + $idDelta) & 0xFFFF;
                     }
+                }
+
+                // Исключаем несуществующие глифы
+                if ($glyphIndex === 0) {
+                    continue;
                 }
 
                 $cmap[$code] = $glyphIndex;
@@ -405,5 +423,54 @@ class TTFFont extends Font
         }
 
         return $cmap;
+    }
+
+    /**
+     * Returns the character for a given Unicode code point.
+     *
+     * @param int $unicode The Unicode code point.
+     * @return string The corresponding character.
+     * @throws \Exception If the Unicode code point is invalid.
+     */
+    public function getCharacterByCode(int $unicode): string
+    {
+        if ($unicode < 0 || $unicode > 0x10FFFF) {
+            throw new \Exception("Invalid Unicode code point: $unicode");
+        }
+
+        return mb_convert_encoding(pack('N', $unicode), 'UTF-8', 'UCS-4BE');
+    }
+
+    /**
+     * Returns the HTML entity (mnemonic) for a given Unicode code point.
+     *
+     * @param int $unicode The Unicode code point.
+     * @return string The HTML entity for the character.
+     * @throws \Exception If the Unicode code point is invalid.
+     */
+    public function getHtmlEntityByCode(int $unicode): string
+    {
+        if ($unicode < 0 || $unicode > 0x10FFFF) {
+            throw new \Exception("Invalid Unicode code point: $unicode");
+        }
+
+        return '&#' . $unicode . ';';
+    }
+
+
+    public function getSymbolByCode($code)
+    {
+        $code = isset($code) ? $code : '';
+
+        printf('');
+    }
+
+    public function getCodeBySymbol($symbol)
+    {
+        $symbol = isset($symbol) ? $symbol : "";
+
+        if ($symbol) {
+            echo "{$symbol}";
+        }
     }
 }

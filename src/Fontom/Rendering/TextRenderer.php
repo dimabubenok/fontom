@@ -207,4 +207,55 @@ class TextRenderer
                 throw new \Exception("Unsupported image format: $format");
         }
     }
+
+    /**
+     * Renders a specific glyph by its Unicode code.
+     *
+     * @param int $unicode The Unicode code of the glyph.
+     * @param int $glyphSize The size of the glyph in the image.
+     * @param array $textColor RGB array of text color (e.g., [0, 0, 0] for black).
+     * @param array $backgroundColor RGB array of background color (e.g., [255, 255, 255] for white).
+     * @return GDImage The generated image.
+     * @throws \Exception If rendering fails or the glyph is not found.
+     */
+    public function renderGlyph(
+        int $unicode,
+        int $glyphSize = 150,
+        array $textColor = [0, 0, 0],
+        array $backgroundColor = [255, 255, 255]
+    ): GDImage {
+        $char = mb_convert_encoding(pack('n', $unicode), 'UTF-8', 'UTF-16BE');
+
+        if (!function_exists('imagettftext')) {
+            throw new \Exception("The GD library with TTF support is required to render glyphs.");
+        }
+
+        // Create an image
+        $image = imagecreatetruecolor($glyphSize, $glyphSize);
+
+        // Allocate colors
+        $bgColor = imagecolorallocate($image, $backgroundColor[0], $backgroundColor[1], $backgroundColor[2]);
+        $txtColor = imagecolorallocate($image, $textColor[0], $textColor[1], $textColor[2]);
+
+        // Fill the background
+        imagefilledrectangle($image, 0, 0, $glyphSize, $glyphSize, $bgColor);
+
+        // Render the glyph
+        $boundingBox = imagettftext(
+            $image,
+            $glyphSize / 2,
+            0, // Angle
+            10, // X position
+            $glyphSize - 10, // Y position
+            $txtColor,
+            $this->font->getFilePath(),
+            $char
+        );
+
+        if (!$boundingBox) {
+            throw new \Exception("Failed to render glyph for Unicode: $unicode");
+        }
+
+        return $image;
+    }
 }
